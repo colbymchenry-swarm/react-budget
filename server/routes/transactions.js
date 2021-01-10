@@ -10,8 +10,6 @@ router.get('/list', async (req, res, next) => {
 /* CREATE transaction */
 router.post('/', async (req, res, next) => {
 
-	console.log(req.body)
-
 	try {
 		await createTransaction(res.locals.connection, req.body)
 	} catch(err) {

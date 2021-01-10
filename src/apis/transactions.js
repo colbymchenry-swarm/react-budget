@@ -1,5 +1,5 @@
 import axios from 'axios'
 
 export default axios.create({
-    baseURL: 'https://megarestock.com/transactions'
+    baseURL: `${process.env.REACT_APP_API_BASE_URL}/transactions`
 })

@@ -1,27 +1,45 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { fetchBudgets, fetchTransactions } from '../../../../actions'
+import { fetchBudgets, fetchTransactions, fetchIncomes } from '../../../../actions'
 import SetIncome from './SetIncome'
+import { Link } from 'react-router-dom'
 
 class Overview extends React.Component {
 
     state = {
-        monthly_income: 0
+        monthly_income: -1
     }
 
     componentDidMount() {
         this.props.fetchBudgets()
         this.props.fetchTransactions()
+        this.props.fetchIncomes()
+    }
+
+    getIncome() {
+        let totalIncome = 0
+        let now = new Date()
+
+        this.props.incomes.forEach(income => {
+            let date = new Date(income.timestamp)
+
+            if (date.getMonth() === now.getMonth()) {
+                totalIncome += parseInt(income.amount)
+            }
+        })
+
+        return totalIncome
     }
 
     spendingData() {
         let totalSpending = 0
-        let totalBudget = 0;
+        let totalBudget = 0
         let now = new Date()
 
         this.props.transactions.forEach(transaction => {
             let date = new Date(transaction.timestamp)
-            if (date.getMonth() === now.getMonth()) {
+
+            if (date.getMonth() === now.getMonth() && parseInt(transaction.budget_id) !== -1) {
                 totalSpending += parseInt(transaction.amount)
             }
         })
@@ -35,6 +53,7 @@ class Overview extends React.Component {
         let percentage = totalSpending / totalBudget
         percentage = percentage === Infinity ? 0 : percentage * 100
 
+
         return { totalSpending, totalBudget, percentage }
     }
 
@@ -46,7 +65,7 @@ class Overview extends React.Component {
         this.props.transactions.forEach(transaction => {
             let date = new Date(transaction.timestamp)
             if (date.getMonth() === now.getMonth() && parseInt(transaction.budget_id) === -1) {
-                    funMoneySpent += parseInt(transaction.amount)
+                funMoneySpent += parseInt(transaction.amount)
             }
         })
 
@@ -59,7 +78,7 @@ class Overview extends React.Component {
             }
         })
 
-        let funMoneyAllowance = this.state.monthly_income - totalBudget
+        let funMoneyAllowance = (this.state.monthly_income + this.getIncome()) - totalBudget
 
         let percentage = funMoneySpent / funMoneyAllowance
         percentage = percentage === Infinity ? 0 : percentage * 100
@@ -68,7 +87,7 @@ class Overview extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
-        if(this.state.monthly_income === 0 || prevProps.monthly_income !== this.props.monthly_income) 
+        if(this.state.monthly_income === -1 || prevProps.monthly_income !== this.props.monthly_income) 
             this.setState({monthly_income: this.props.monthly_income })
     }
 
@@ -83,12 +102,16 @@ class Overview extends React.Component {
         let { totalSpending, totalBudget, percentage } = this.spendingData()
         let funMondayData = this.funMoneyData()
 
+
         return (
             <div className="card">
                 <div className="card-header">
                     <div className="row">
                         <div className="col-6">
                             <p style={{ marginTop: '4px', height: '8px' }}>Overview</p>
+                        </div>
+                        <div className="col-6">
+                            <Link to="/income" className="btn btn-primary btn-sm float-right">Manage Income</Link>
                         </div>
                     </div>
                 </div>
@@ -97,11 +120,20 @@ class Overview extends React.Component {
 
                     <SetIncome />
 
+                    <div className="row">
+                        <div className="col-6">
+                            Additional Income:
+                        </div>
+                        <div className="col-6">
+                            <p className="float-right">${this.getIncome()}</p>
+                        </div>
+                    </div>
+
                     <table className="table">
                         <tbody>
                             <tr>
                                 <th className="col-10" scope="row">
-                                    <span style={{ height: '8px' }}>Your Spending</span>
+                                    <span style={{ height: '8px' }}>Budget Spending</span>
                                     <br />
                                     <div className="progress">
                                         <div className="progress-bar" role="progressbar" aria-valuenow={percentage} aria-valuemin="0" aria-valuemax="100" style={{ width: `${percentage}%` }}></div>
@@ -117,7 +149,7 @@ class Overview extends React.Component {
 
                             <tr>
                                 <th className="col-10" scope="row">
-                                    <span style={{ height: '8px' }}>Fun Money</span>
+                                    <span style={{ height: '8px' }}><Link to={`/transactions/view/-1`}>Fun Money</Link> Spending</span>
                                     <br />
                                     <div className="progress">
                                         <div className="progress-bar" role="progressbar" aria-valuenow={funMondayData.percentage} aria-valuemin="0" aria-valuemax="100" style={{ width: `${funMondayData.percentage}%` }}></div>
@@ -144,9 +176,10 @@ const mapStateToProps = state => {
         budgets: Object.values(state.budgets), 
         transactions: Object.values(state.transactions),
         userId: state.auth.userId,
-        monthly_income: state.user.monthly_income
+        monthly_income: state.user.monthly_income,
+        incomes: Object.values(state.incomes)
     }
 }
 
-export default connect(mapStateToProps, { fetchBudgets, fetchTransactions })(Overview)
+export default connect(mapStateToProps, { fetchBudgets, fetchTransactions, fetchIncomes })(Overview)
 

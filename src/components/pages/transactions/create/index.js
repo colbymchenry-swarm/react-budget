@@ -40,8 +40,10 @@ class CreateTransaction extends React.Component {
 
     componentDidUpdate(prevProps, prevState) {
         if(this.state.selectedBudget === -1) {
-            let default_budget = this.props.budgets.find(budget => !budget.fixed)
-            this.setState({selectedBudget: default_budget === undefined ? -1 : default_budget.id })
+            if (this.props.budgets.length > 0)  {
+                let default_budget = this.props.budgets.find(budget => !budget.fixed)
+                this.setState({selectedBudget: default_budget === undefined ? -1 : default_budget.id })
+            }
         }
     }
 
